@@ -1,0 +1,74 @@
+---
+# tasks file for ansible-role-clone-template
+
+# Register the ubuntu template
+# Create K8s VM folder
+- name: Create folder for VMs
+  community.vmware.vcenter_folder:
+    datacenter_name: '{{ vcenter_datacenter }}'
+    folder_name: "{{ vcenter_vm_folder }}"
+    folder_type: vm
+    state: present
+  tags: k8s_folder
+
+- name: Register template VM
+  community.vmware.vmware_guest_register_operation:
+    datacenter: "{{ vcenter_datacenter }}"
+    folder: "/vm"
+    esxi_hostname: "{{ groups['vmware'][0] }}"
+    name: '{{ vm_backup_template_name }}'
+    template: true
+    path: '[{{ nfs_backup_name }}] {{ vm_backup_template_name }}/{{ vm_backup_template_name }}.vmtx'
+    state: present
+  tags:
+    - register_vm
+    - clone_vm
+
+- name: Gather available datastores
+  community.vmware.vmware_datastore_info:
+    datacenter: "{{ vcenter_datacenter }}"
+  register: datastores
+  delegate_to: localhost
+
+
+# Build list of shared datastores for the VMs
+- name: Select candidate datastores
+  ansible.builtin.set_fact:
+    dest_datastores: "{{ datastores.datastores | \
+                        selectattr('type', 'match', 'VMFS') | \
+                        selectattr('multipleHostAccess', 'equalto', True) | \
+                        map(attribute='name') | list }}"
+
+- name: Clone template VM to local storage
+  community.vmware.vmware_guest:
+    datacenter: "{{ vcenter_datacenter }}"
+    state: present
+    folder: "/vm"
+    template: "{{ vm_backup_template_name }}"
+    name: "{{ vm_backup_template_name }}_local"
+    cluster: "{{ vcenter_cluster }}"
+    # Had to comment this out since it causes a customization task to fire which
+    # will cause deployments to fail saying there is already a quest customization
+    # process scheduled after deploying from the template.
+    # Instead, handle customization during the cloning process for K8s VMs
+    # networks:
+    #   - name: "{{ vcenter_dvs_name}}-{{ vcenter_dvs_portgroup_VMNetwork }}"
+    datastore: "{{ dest_datastores[0] }}"
+    is_template: true
+  tags:
+    - volumes
+    - clone_vm
+
+# Unregister the ubuntu template from the NFS share
+- name: Unregister the source template
+  community.vmware.vmware_guest_register_operation:
+    datacenter: "{{ vcenter_datacenter }}"
+    folder: "/vm"
+    esxi_hostname: "{{ groups['vmware'][0] }}"
+    name: '{{ vm_backup_template_name }}'
+    template: true
+    path: '[{{ nfs_backup_name }}] {{ vm_backup_template_name }}/{{ vm_backup_template_name }}.vmtx'
+    state: absent
+  tags:
+    - unregister_vm
+    - clone_vm

@@ -1,0 +1,14 @@
+---
+# defaults file for ansible-role-clone-template
+
+# vCenter variables
+vcenter_datacenter: "SC0"
+vcenter_cluster: "AppFactory"
+vcenter_hostname: "devvcsa.tme.nebulon.com"
+
+# Folder to register the VM into
+vcenter_vm_folder: "Kubernetes"
+
+# Details on NFS mount holding backup of the VM template
+nfs_backup_name: backup
+vm_backup_template_name: "ubuntu20.04.4"

@@ -1,0 +1,6 @@
+---
+# vars file for ansible-role-clone-template
+
+# Vault credentials
+vcenter_username: "{{ vault_vcenter_username }}"
+vcenter_password: "{{ vault_vcenter_password }}"
