@@ -1,5 +1,5 @@
 ---
-# defaults file for ansible-role-clone-template
+# defaults file for ansible-role-clone_template
 
 # vCenter variables
 vcenter_datacenter: "SC0"

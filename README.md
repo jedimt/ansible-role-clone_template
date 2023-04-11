@@ -43,24 +43,23 @@ Example Playbook
     # Clone template VM to VCSA
     # ===========================================================================
     - name: Clone template VM to VCSA
-    hosts: localhost
-    connection: local
-    gather_facts: false
-    become: false
-    module_defaults:
+      hosts: localhost
+      connection: local
+      gather_facts: false
+      become: false
+      module_defaults:
         group/vmware:
         hostname: '{{ vcenter_hostname }}'
         username: '{{ vcenter_username }}'
         password: '{{ vcenter_password }}'
         validate_certs: false
-    tags: play_clone_template
 
-    vars_files:
+      vars_files:
         # Ansible vault with all required passwords
         - "../../credentials.yml"
 
-    roles:
-        - ansible-role-clone-template
+      roles:
+        - jedimt.clone_template
 
 
 License
